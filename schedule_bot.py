@@ -278,39 +278,42 @@ async def get_main_menu(is_admin: bool = False):
 
 
 def create_schedule_text(rows, group: str) -> str:
-    lines = [f"🎓 <b>{group.upper()}</b>\n"]
+    lines = [f" <b>{group.upper()}</b>\n"]
     lines.append("═" * 40 + "\n")
-    
+
     current_date = None
-    
+
     for row in rows:
         day, date, t_start, t_end, subject, cabinet = row
-        
+
+        # Очищаем дату от времени (берем только первые 10 символов: YYYY-MM-DD)
+        date_clean = date[:10] if date and len(date) >= 10 else date
+
         # Заголовок дня
-        if date != current_date and date:
+        if date_clean != current_date and date_clean:
             if current_date is not None:
                 lines.append("\n")
-            emoji_day = {"Понедельник": "1️⃣", "Вторник": "2️⃣", "Среда": "3️⃣", 
-                        "Четверг": "4️⃣", "Пятница": "5️⃣", "Суббота": "6️⃣"}.get(day, "📅")
-            lines.append(f"{emoji_day} <b>{day}</b> • {date}")
+            emoji_day = {"Понедельник": "1️⃣", "Вторник": "2️⃣", "Среда": "3️⃣",
+                         "Четверг": "4️⃣", "Пятница": "5️⃣", "Суббота": "6️⃣"}.get(day, "📅")
+            lines.append(f"{emoji_day} <b>{day}</b> • {date_clean}")
             lines.append("─" * 40)
-            current_date = date
-        
+            current_date = date_clean
+
         # Время
         time_display = f"{t_start}–{t_end}" if t_start and t_end else "—"
-        
+
         # Кабинет
-        cab_display = f"📍 {cabinet}" if cabinet and str(cabinet).strip() not in ["nan", "—", ""] else ""
-        
+        cab_display = f"Кабинет  {cabinet}" if cabinet and str(cabinet).strip() not in ["nan", "—", ""] else ""
+
         # Формат: время | предмет | кабинет
         line = f"<code>{time_display:>10}</code> | {subject}"
         if cab_display:
             line += f"\n{'':>13}{cab_display}"
-        
+
         lines.append(line)
-    
+
     lines.append("\n" + "═" * 40)
-    
+
     return "\n".join(lines)
 
 
