@@ -278,21 +278,39 @@ async def get_main_menu(is_admin: bool = False):
 
 
 def create_schedule_text(rows, group: str) -> str:
-    lines = [f"РАСПИСАНИЕ — {group.upper()}\n"]
-    lines.append("═" * 60)
+    lines = [f"🎓 <b>{group.upper()}</b>\n"]
+    lines.append("═" * 40 + "\n")
+    
     current_date = None
+    
     for row in rows:
         day, date, t_start, t_end, subject, cabinet = row
+        
+        # Заголовок дня
         if date != current_date and date:
-            lines.append(f"\n📌 {day} — {date}")
+            if current_date is not None:
+                lines.append("\n")
+            emoji_day = {"Понедельник": "1️⃣", "Вторник": "2️⃣", "Среда": "3️⃣", 
+                        "Четверг": "4️⃣", "Пятница": "5️⃣", "Суббота": "6️⃣"}.get(day, "📅")
+            lines.append(f"{emoji_day} <b>{day}</b> • {date}")
+            lines.append("─" * 40)
             current_date = date
-            lines.append("─" * 50)
-
-        time_str = f" {t_start}-{t_end}" if t_start and t_end else ""
-        cabinet_str = f" → Каб. {cabinet}" if cabinet and str(cabinet).strip() not in ["nan", "—", ""] else ""
-
-        lines.append(f"{time_str} {subject}{cabinet_str}".strip())
-    lines.append("\n" + "═" * 60)
+        
+        # Время
+        time_display = f"{t_start}–{t_end}" if t_start and t_end else "—"
+        
+        # Кабинет
+        cab_display = f"📍 {cabinet}" if cabinet and str(cabinet).strip() not in ["nan", "—", ""] else ""
+        
+        # Формат: время | предмет | кабинет
+        line = f"<code>{time_display:>10}</code> | {subject}"
+        if cab_display:
+            line += f"\n{'':>13}{cab_display}"
+        
+        lines.append(line)
+    
+    lines.append("\n" + "═" * 40)
+    
     return "\n".join(lines)
 
 
@@ -380,7 +398,7 @@ async def show_group_schedule(callback: CallbackQuery):
         [InlineKeyboardButton(text="← Главное меню", callback_data="main_menu")]
     ])
 
-    await callback.message.edit_text(text, parse_mode=None, reply_markup=keyboard)
+    await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=keyboard)
 
 
 @dp.callback_query(lambda c: c.data == "main_menu")
@@ -467,7 +485,7 @@ async def show_feedback(callback: CallbackQuery):
 
     text = "<b>Новые отзывы</b>\n\n"
     for fid, username, ftext, fdate in feedbacks:
-        text += f" {username} ({fdate})\n{ftext}\n\n"
+        text += f"👤 {username} ({fdate})\n{ftext}\n\n"
 
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("UPDATE feedback SET is_read = 1 WHERE is_read = 0")
